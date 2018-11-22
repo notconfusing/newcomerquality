@@ -1,0 +1,15 @@
+name: enwiki
+label: English Wikipedia
+host: en.wikipedia.org
+
+samples:
+    2k_2018:
+        labeling_campaign: https://labels.wmflabs.org/campaigns/enwiki/86/
+
+default_sample: 2k_2018
+
+models:
+    damaging:
+        pop_rate_true: 0.034163555464634586
+    goodfaith:
+        pop_rate_true: 0.9671661637600368

@@ -1,0 +1,10 @@
+deep_merge >= 0.0.2
+docopt==0.6.2
+mwapi >= 0.5.1, < 0.5.999
+mwtypes >= 0.3.0, < 0.3.999
+mwreverts >= 0.1.0, < 0.1.999
+pandas
+numpy
+sklearn_pandas
+sklearn
+
