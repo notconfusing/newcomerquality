@@ -1,3 +1,7 @@
 logs/*
 
 \.idea/
+
+newcomerquality/utilities/__pycache__/
+
+ipython/\.ipynb_checkpoints/

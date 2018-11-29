@@ -106,9 +106,11 @@ def main(argv=None):
 def run(dumpf, session, start, end, revert_radius, revert_window,
         reverted_only, trusted_users, trusted_edits,
         check_blocked, verbose=False):
-    from IPython import embed; embed()
     completed_row_oriented = json.load(open(dumpf,'r'))
     df = pd.DataFrame.from_dict(completed_row_oriented)
+
+    from IPython import embed; embed()
+
 
 if __name__ == "__main__":
     try:
