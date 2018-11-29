@@ -56,6 +56,8 @@ from mwtypes import Timestamp
 
 import pandas as pd
 
+from ..make_features import make_features
+
 Revision = namedtuple("Revision", ['id', 'status', 'reason'])
 User = namedtuple("User", ['id', 'editcount', 'groups'])
 
@@ -108,8 +110,7 @@ def run(dumpf, session, start, end, revert_radius, revert_window,
         check_blocked, verbose=False):
     completed_row_oriented = json.load(open(dumpf,'r'))
     df = pd.DataFrame.from_dict(completed_row_oriented)
-
-    from IPython import embed; embed()
+    featured = make_features(df, feature_list=None)
 
 
 if __name__ == "__main__":
