@@ -5,3 +5,5 @@ logs/*
 newcomerquality/utilities/__pycache__/
 
 ipython/\.ipynb_checkpoints/
+
+newcomerquality/__pycache__/

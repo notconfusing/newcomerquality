@@ -110,8 +110,13 @@ def run(dumpf, session, start, end, revert_radius, revert_window,
         check_blocked, verbose=False):
     completed_row_oriented = json.load(open(dumpf,'r'))
     df = pd.DataFrame.from_dict(completed_row_oriented)
-    featured = make_features(df, feature_list=None)
-
+    logger.info('Total rows from wikilabels: {}'.format(len(df)))
+    df = df[pd.notnull(df['goodfaith_label'])]
+    logger.info('Total rows with a non-skipped label: {}'.format(len(df)))
+    # df = df.iloc[:50]
+    logger.info('Total rows after subsetting for quick debugging: {}'.format(len(df)))
+    featured = make_features(df, feature_list=None, train_or_predict='train')
+    featured.to_json(sys.stdout)
 
 if __name__ == "__main__":
     try:

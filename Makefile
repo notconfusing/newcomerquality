@@ -27,43 +27,35 @@ datasets/enwiki.human_labeled_sessions.features.2k_2018.json: \
 	./utility newcomer_extract \
 		--dump-file $< \
 		--host https://en.wikipedia.org \
-		--verbose # > $@
+		--verbose > $@
 
-# Tuning Reports
-tuning_reports/enwiki.damaging.md: \
+# Create scaling mapper
+models/enwiki.goodfaith.scaling.mapper: \
 		datasets/enwiki.human_labeled_sessions.features.2k_2018.json
-	cat $< | \
-	./utility newcomer_tune \
-		config/classifiers.params.yaml \
-		editquality.feature_lists.enwiki.damaging \
-		damaging \
-		roc_auc.labels.true \
-		--label-weight "true=$(damaging_weight)" \
-		--pop-rate "true=0.034163555464634586" \
-		--pop-rate "false=0.9658364445353654" \
-		--center --scale \
-		--cv-timeout 60 \
-		--debug > $@
+	./utility newcomer_train \
+		--dump-file $< \
+		--fn make_scaling_mapper \
+	    --scaling_mapper $@
+
+#  Reports
+tuning_reports/enwiki.goodfaith.md: \
+		models/enwiki.goodfaith.scaling.mapper
+	./utility newcomer_train \
+		--dump-file datasets/enwiki.human_labeled_sessions.features.2k_2018.json \
+		--fn tuning_report \
+		--model_params config/classifiers.params.json \
+		--scaling_mapper models/enwiki.goodfaith.scaling.mapper \
+		> $@
 
 # Create model
 models/enwiki.goodfaith.logistic_regression.model: \
-		datasets/enwiki.human_labeled_sessions.features.2k_2018.json
-	cat $^ | \
+		tuning_reports/enwiki.goodfaith.md
 	./utility newcomer_train \
-		revscoring.scoring.models.GradientBoosting \
-		editquality.feature_lists.enwiki.damaging \
-		damaging \
-		--version=$(damaging_major_minor).0 \
-		-p 'learning_rate=0.01' \
-		-p 'max_depth=7' \
-		-p 'max_features="log2"' \
-		-p 'n_estimators=700' \
-		--label-weight "true=$(damaging_weight)" \
-		--pop-rate "true=0.034163555464634586" \
-		--pop-rate "false=0.9658364445353654" \
-		--center --scale > $@
-
-	./utility model_info $@ > model_info/enwiki.goodfaith.md
+		--dump-file datasets/enwiki.human_labeled_sessions.features.2k_2018.json \
+		--fn create_model \
+		--model_params config/model_defaults.json \
+		--scaling_mapper models/enwiki.goodfaith.scaling.mapper \
+	    --model_file $@
 
 enwiki_models: \
 	models/enwiki.goodfaith.logistic_regression.model
