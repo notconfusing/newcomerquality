@@ -5,6 +5,7 @@ import datetime as dt
 from collections import defaultdict
 import numpy as np
 import logging
+import sys
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -135,14 +136,14 @@ def get_last_user_contribs_upto_date(user_id, end_date):
     return user_q['query']['usercontribs']
 
 
-def page_dicts_of_session(session_data):
-    sess_revids = [r['revid'] for r in session_data]
-    sess_contribs = [c for c in session_data['usercontribs'] if c['revid'] in sess_revids]
-    page_dicts = [{'page_id': c['pageid'], 'page_ns': c['ns']} for c in sess_contribs]
-    return page_dicts
+# def page_dicts_of_session(session_data):
+#     sess_revids = [r['revid'] for r in session_data]
+#     sess_contribs = [c for c in session_data['usercontribs'] if c['revid'] in sess_revids]
+#     page_dicts = [{'page_id': c['pageid'], 'page_ns': c['ns']} for c in sess_contribs]
+#     return page_dicts
 
 
-def make_features(df, feature_list, train_or_predict):
+def make_features(df, train_or_predict):
     """
 
     :param df dataframe containig session-orient rows and a 'revids' column containg list of revids:
@@ -164,10 +165,9 @@ def make_features(df, feature_list, train_or_predict):
         df['pages'] = df['timestamps_pages'].apply(lambda d: d['pages'])
 
     elif train_or_predict == 'predict':
-        df['rev_ids'] = df['session_data'].apply(lambda l: [e['revid'] for e in l])
-        df['timestamps'] = df['session_data'].apply(lambda l: [e['timestamp'] for e in l])
-        df['pages'] = df['session_data'].apply(lambda sd: page_dicts_of_session(sd))
-
+        assert 'rev_ids' in df.columns
+        assert 'timestamps' in df.columns
+        assert 'pages' in df.columns
 
     df['ores_data'] = df['rev_ids'].apply(lambda rev_ids: get_ores_data_dgf(rev_ids, revids_scores))
 

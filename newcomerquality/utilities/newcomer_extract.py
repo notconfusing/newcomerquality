@@ -115,7 +115,7 @@ def run(dumpf, session, start, end, revert_radius, revert_window,
     logger.info('Total rows with a non-skipped label: {}'.format(len(df)))
     # df = df.iloc[:50]
     logger.info('Total rows after subsetting for quick debugging: {}'.format(len(df)))
-    featured = make_features(df, feature_list=None, train_or_predict='train')
+    featured = make_features(df, train_or_predict='train')
     featured.to_json(sys.stdout)
 
 if __name__ == "__main__":
