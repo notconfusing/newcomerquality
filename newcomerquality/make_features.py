@@ -1,3 +1,5 @@
+import warnings
+
 from ores import api as ores_api
 import mwreverts.api
 import mwapi
@@ -187,51 +189,52 @@ def make_features(df, train_or_predict):
                     pass #i've seen this before if there was a textdeleted error
         return return_scores
 
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        df['damaging_scores'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'probability'))
+        df['damaging_predictions'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'prediction'))
+        df['goodfaith_scores'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'probability'))
+        df['goodfaith_predictions'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'prediction'))
 
-    df['damaging_scores'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'probability'))
-    df['damaging_predictions'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'prediction'))
-    df['goodfaith_scores'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'probability'))
-    df['goodfaith_predictions'] = df['ores_data'].apply(lambda scores: get_ores_scores(scores, 'damaging', 'prediction'))
+        # missing_goodfaith = df[df['goodfaith_scores'].apply(lambda l: len(l) == 0)]
+        # print('missing goodfaith were: {}'.format(len(missing_goodfaith)))
 
-    # missing_goodfaith = df[df['goodfaith_scores'].apply(lambda l: len(l) == 0)]
-    # print('missing goodfaith were: {}'.format(len(missing_goodfaith)))
+        df = df[df['goodfaith_scores'].apply(lambda l: len(l) > 0)]
 
-    df = df[df['goodfaith_scores'].apply(lambda l: len(l) > 0)]
-
-    logg.info('getting revert data')
-    df['revert_data'] = df['rev_ids'].apply(lambda x: num_reverts(x))
+        logg.info('getting revert data')
+        df['revert_data'] = df['rev_ids'].apply(lambda x: num_reverts(x))
 
 
-    df['self_reverts'] = df['revert_data'].apply(lambda d: d['self_reverts'])
-    df['edit_wars'] = df['revert_data'].apply(lambda d: d['edit_wars'])
-    # print('doing meta statistics')
-    df['goodfaith_scores_mean'] = df['goodfaith_scores'].apply(np.mean)
-    df['goodfaith_scores_var'] = df['goodfaith_scores'].apply(np.var)
-    df['goodfaith_scores_max'] = df['goodfaith_scores'].apply(max)
-    df['goodfaith_scores_min'] = df['goodfaith_scores'].apply(min)
-    df['goodfaith_scores_reg_slope'] = df['goodfaith_scores'].apply(lambda v: simp_lin_reg(v, 'slope'))
-    df['goodfaith_scores_reg_intercept'] = df['goodfaith_scores'].apply(lambda v: simp_lin_reg(v, 'intercept'))
-    df['goodfaith_scores_count'] = df['goodfaith_scores'].apply(len)
-    df['goodfaith_scores_count_log'] = df['goodfaith_scores'].apply(lambda v: np.log(len(v)))
+        df['self_reverts'] = df['revert_data'].apply(lambda d: d['self_reverts'])
+        df['edit_wars'] = df['revert_data'].apply(lambda d: d['edit_wars'])
+        # print('doing meta statistics')
+        df['goodfaith_scores_mean'] = df['goodfaith_scores'].apply(np.mean)
+        df['goodfaith_scores_var'] = df['goodfaith_scores'].apply(np.var)
+        df['goodfaith_scores_max'] = df['goodfaith_scores'].apply(max)
+        df['goodfaith_scores_min'] = df['goodfaith_scores'].apply(min)
+        df['goodfaith_scores_reg_slope'] = df['goodfaith_scores'].apply(lambda v: simp_lin_reg(v, 'slope'))
+        df['goodfaith_scores_reg_intercept'] = df['goodfaith_scores'].apply(lambda v: simp_lin_reg(v, 'intercept'))
+        df['goodfaith_scores_count'] = df['goodfaith_scores'].apply(len)
+        df['goodfaith_scores_count_log'] = df['goodfaith_scores'].apply(lambda v: np.log(len(v)))
 
-    # print('doing time stats')
+        # print('doing time stats')
 
-    df['goodfaith_timestamps_total_seconds'] = df['timestamps'].apply(total_seconds)
-    df['goodfaith_timestamps_variance'] = df['timestamps'].apply(lambda t: fn_seconds(t, np.var))
-    df['goodfaith_timestamps_min'] = df['timestamps'].apply(lambda t: fn_seconds(t, np.min))
-    df['goodfaith_timestamps_max'] = df['timestamps'].apply(lambda t: fn_seconds(t, np.max))
+        df['goodfaith_timestamps_total_seconds'] = df['timestamps'].apply(total_seconds)
+        df['goodfaith_timestamps_variance'] = df['timestamps'].apply(lambda t: fn_seconds(t, np.var))
+        df['goodfaith_timestamps_min'] = df['timestamps'].apply(lambda t: fn_seconds(t, np.min))
+        df['goodfaith_timestamps_max'] = df['timestamps'].apply(lambda t: fn_seconds(t, np.max))
 
-    df['pages_unique_count'] = df['pages'].apply(lambda plist: len(set([p['page_id'] for p in plist])))
-    df['pages_namespace_count'] = df['pages'].apply(lambda plist: len(set([p['page_ns'] for p in plist])))
-    df['pages_nonmain_count'] = df['pages'].apply(
-        lambda plist: len(set([p['page_ns'] for p in plist if p['page_ns'] != 0])))
-    df['pages_talk_count'] = df['pages'].apply(
-        lambda plist: len(set([p['page_ns'] for p in plist if p['page_ns'] % 2 == 1])))
+        df['pages_unique_count'] = df['pages'].apply(lambda plist: len(set([p['page_id'] for p in plist])))
+        df['pages_namespace_count'] = df['pages'].apply(lambda plist: len(set([p['page_ns'] for p in plist])))
+        df['pages_nonmain_count'] = df['pages'].apply(
+            lambda plist: len(set([p['page_ns'] for p in plist if p['page_ns'] != 0])))
+        df['pages_talk_count'] = df['pages'].apply(
+            lambda plist: len(set([p['page_ns'] for p in plist if p['page_ns'] % 2 == 1])))
 
-    df['singleton_session'] = df['rev_ids'].apply(lambda rev_ids: len(rev_ids) == 1)
+        df['singleton_session'] = df['rev_ids'].apply(lambda rev_ids: len(rev_ids) == 1)
 
-    df['first_edit_ores_goodfaith'] = df['goodfaith_predictions'].apply(lambda predictions: predictions[0])
-    df['first_edit_ores_damaging'] = df['damaging_predictions'].apply(lambda predictions: predictions[0])
-    df['any_edit_ores_goodfaith'] = df['goodfaith_predictions'].apply(lambda predictions: any(predictions))
-    df['any_edit_ores_damaging'] = df['damaging_predictions'].apply(lambda predictions: any(predictions))
+        df['first_edit_ores_goodfaith'] = df['goodfaith_predictions'].apply(lambda predictions: predictions[0])
+        df['first_edit_ores_damaging'] = df['damaging_predictions'].apply(lambda predictions: predictions[0])
+        df['any_edit_ores_goodfaith'] = df['goodfaith_predictions'].apply(lambda predictions: any(predictions))
+        df['any_edit_ores_damaging'] = df['damaging_predictions'].apply(lambda predictions: any(predictions))
     return df

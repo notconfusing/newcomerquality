@@ -1,10 +1,15 @@
+import pickle
+import warnings
+
 import mwapi
 import datetime
 import logging
-from sessionify import sessionify
+from newcomerquality.sessionify import sessionify
 import pandas as pd
 
-from make_features import make_features
+from newcomerquality.make_features import make_features
+
+logg = logging.getLogger()
 
 
 def get_registration_date_of_user(user_id, context, mwapisession):
@@ -44,35 +49,52 @@ def score_newcomer_first_days(user_id, context='enwiki', days=2, registration_da
     usercontribs = get_edits_within_days_of_registration(user_id, context, registration_date, days, mwapisession)
 
     if not usercontribs:
-        return None
+        return {'error':True, 'reason':'could not get user contribs. maybe there were none or the they were deleted'}
     # fn: session-revisions
 
-    session_df = sessionify(user_df, usercontribs)
+    sessions_df = sessionify(user_df, usercontribs)
 
-    session_featured_df = make_features(session_df, train_or_predict='predict')
+    sessions_featured_df = make_features(sessions_df, train_or_predict='predict')
 
-    print(session_featured_df)
+    mapper_file = open('models/enwiki.goodfaith.scaling.mapper', 'rb')
+    model_file = open('models/enwiki.goodfaith.logistic_regression.model', 'rb')
+
+    mapper = pickle.load(mapper_file)
+    model = pickle.load(model_file)
+
+    mapper_file.close()
+    model_file.close()
+
+    # print(sessions_featured_df)
+
     # fn: score_session(session=revision_list)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        sessions_featured_mapped = mapper.transform(sessions_featured_df.copy())
 
-    # fn: score multiple sessions with model (in loop?)
+    sessions_probas = model.predict_proba(sessions_featured_mapped)
+
+    sessions_goodfaith_proba = sessions_probas[:, 1:]
+
     # question: how to aggregate multiple sessions (with multiple heuristics, and full underlying session scores).
     # return mulitiple session predictions
 
+    newcomer_predictions = {
+                        'sessions_goodfaith_proba_mean' : sessions_goodfaith_proba.mean(),
+                        'sessions_goodfaith_proba_min' : sessions_goodfaith_proba.min(),
+                        'sessions_goodfaith_proba_max' : sessions_goodfaith_proba.max(),
+                        }
+
+    user_summary = {'days_of_revisions': days,
+                    'edits_found':len(usercontribs),
+                    'sessions_found':len(sessions_df),
+                    }
 
 
-if __name__ == '__main__':
+    return_dict = {'error':False,
+                    'user_id':user_id,
+                    'user_summary': user_summary,
+                    'scores': list(sessions_goodfaith_proba.flatten()),
+                   'newcomer_predictions':newcomer_predictions,}
 
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s %(levelname)s:%(name)s -- %(message)s',
-        filename='logs/newcomer_prediction.log', filemode='w',
-    )
-    logg = logging.getLogger()
-
-    test_user_ids = (44846, 4670490, 35303278, 11801436, 1755837)
-    for test_user_id in test_user_ids:
-        user_score = score_newcomer_first_days(test_user_id)
-        if not user_score:
-            logg.info(f'For some reason could not get contrib data for user {test_user_id}')
-        else:
-            logg.info(f'User score for user {test_user_id} is {user_score}')
+    return return_dict
