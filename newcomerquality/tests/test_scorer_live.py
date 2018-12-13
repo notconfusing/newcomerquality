@@ -1,5 +1,7 @@
-from newcomerquality.scorer import score_newcomer_first_days
+import datetime
+from newcomerquality.scorer import get_registration_date_of_user, score_newcomer_first_days
 import logging
+from unittest.mock import patch, MagicMock
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -8,7 +10,25 @@ logging.basicConfig(
 )
 logg = logging.getLogger()
 
-def test_scorer_live(test_user_ids):
+
+def test_get_registration_date_of_user():
+    user_id = 123
+    context = 'enwiki'
+    mwapisession = MagicMock()
+    mwapisession.get.return_value = {
+        'query': {
+            'users': [
+                {
+                    'registration': '2018-04-01T00:01:02Z',
+                }
+            ]
+        }
+    }
+    registration_date = get_registration_date_of_user(user_id, context, mwapisession)
+    assert registration_date == datetime.datetime(2018, 4, 1, 0, 1, 2)
+
+
+def test_scorer_live():
     '''needs an active connection'''
     for test_user_id in test_user_ids:
         user_score_ret = score_newcomer_first_days(test_user_id)
@@ -18,6 +38,3 @@ def test_scorer_live(test_user_ids):
         elif not user_score_ret['error']:
             logg.info(f"User score for user {test_user_id} is {user_score_ret['user_id']}")
             print(user_score_ret['newcomer_predictions']['sessions_goodfaith_proba_min'])
-
-if __name__ == '__main__':
-    test_scorer_live()
