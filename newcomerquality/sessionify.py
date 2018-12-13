@@ -46,7 +46,7 @@ def sessionify(user_df, usercontribs):
     rev_df = pd.DataFrame.from_dict(usercontribs)
     #     print(rev_df)
     sessions = make_sessions(rev_df)
-    print(f'found {len(sessions)} sessions for {len(rev_df)} revisions')
+    # print(f'found {len(sessions)} sessions for {len(rev_df)} revisions')
     #     print(user_df['user_id'].iloc[0])
 
     for edit_session in sessions:

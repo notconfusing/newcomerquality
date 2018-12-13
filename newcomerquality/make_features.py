@@ -12,7 +12,7 @@ import sys
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s:%(name)s -- %(message)s',
-    filename='logs/fetch.log', filemode='w',
+    # filename='logs/fetch.log', filemode='w',
 )
 logg = logging.getLogger()
 
@@ -201,7 +201,7 @@ def make_features(df, train_or_predict):
 
         df = df[df['goodfaith_scores'].apply(lambda l: len(l) > 0)]
 
-        logg.info('getting revert data')
+        logg.debug('getting revert data')
         df['revert_data'] = df['rev_ids'].apply(lambda x: num_reverts(x))
 
 

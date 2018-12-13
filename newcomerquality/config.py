@@ -5,9 +5,12 @@ The responsibility of this process is to simplify the template's work and other
 consumers, as much as possible.
 """
 import collections
-import deep_merge
+import os
+import pickle
+
 import glob
-import yaml
+
+from newcomerquality import newcomerquality
 
 
 def load_config(config_dir=None):
@@ -101,3 +104,19 @@ def populate_defaults(config):
     config["wikis"] = wikis_config
 
     return config
+
+
+def load_mapper_model(config=None):
+    if not config:
+        #load deaulfts
+        model_path = os.path.join(os.path.dirname(newcomerquality.__file__), '..', 'models')
+
+        mapper_file = open(os.path.join(model_path, 'enwiki.goodfaith.scaling.mapper'), 'rb')
+        model_file = open(os.path.join(model_path, 'enwiki.goodfaith.logistic_regression.model'), 'rb')
+
+        mapper = pickle.load(mapper_file)
+        model = pickle.load(model_file)
+
+        mapper_file.close()
+        model_file.close()
+        return mapper, model
